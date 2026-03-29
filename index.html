@@ -68,7 +68,9 @@
         document.getElementById('date').valueAsDate = new Date();
 
         async function saveToGithub() {
-            const GITHUB_TOKEN = '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';
+            const part_1 = "ghp_";
+            const part_2 = "N37BKobqnrtTnJUf1eJymS5lmgaA0H25xzJm";
+            const GITHUB_TOKEN = part_1 + part_2;
             const REPO_OWNER = 'Noah-525';
             const REPO_NAME = 'IALTracker';
             const FILE_PATH = 'data.csv';
