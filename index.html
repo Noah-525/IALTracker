@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>IAL Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700">
+        <h1 class="text-2xl font-bold text-center mb-6 text-emerald-400">📊 IAL Practice Log</h1>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs uppercase tracking-widest text-slate-400 font-bold">Exam Date</label>
+                <input type="date" id="date" class="w-full mt-1 p-4 bg-slate-700 rounded-xl border-none outline-none focus:ring-2 ring-emerald-500 text-white">
+            </div>
+
+            <div>
+                <label class="text-xs uppercase tracking-widest text-slate-400 font-bold">Subject</label>
+                <select id="subject" class="w-full mt-1 p-4 bg-slate-700 rounded-xl border-none outline-none focus:ring-2 ring-emerald-500 appearance-none">
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Biology">Biology</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-xs uppercase tracking-widest text-slate-400 font-bold">Paper/Unit</label>
+                <select id="paper" class="w-full mt-1 p-4 bg-slate-700 rounded-xl border-none outline-none focus:ring-2 ring-emerald-500 appearance-none">
+                    <option value="Unit 1">Unit 1</option>
+                    <option value="Unit 2">Unit 2</option>
+                    <option value="Unit 3">Unit 3</option>
+                    <option value="Unit 4">Unit 4</option>
+                    <option value="Unit 5">Unit 5</option>
+                    <option value="Unit 6">Unit 6</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs uppercase tracking-widest text-slate-400 font-bold">Score %</label>
+                    <input type="number" id="score" placeholder="85" class="w-full mt-1 p-4 bg-slate-700 rounded-xl border-none outline-none focus:ring-2 ring-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs uppercase tracking-widest text-slate-400 font-bold">Grade</label>
+                    <select id="grade" class="w-full mt-1 p-4 bg-slate-700 rounded-xl border-none outline-none focus:ring-2 ring-emerald-500 appearance-none">
+                        <option value="A*">A*</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="U">U</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="saveToGithub()" id="saveBtn" class="w-full py-4 mt-6 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all">
+                Save to GitHub
+            </button>
+            <p id="status" class="text-center text-sm font-medium mt-2"></p>
+        </div>
+    </div>
+
+    <script>
+        // Set default date to today
+        document.getElementById('date').valueAsDate = new Date();
+
+        async function saveToGithub() {
+            const GITHUB_TOKEN = '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';
+            const REPO_OWNER = 'Noah-525';
+            const REPO_NAME = 'IALTracker';
+            const FILE_PATH = 'data.csv';
+
+            const btn = document.getElementById('saveBtn');
+            const status = document.getElementById('status');
+            
+            const newEntry = `${document.getElementById('date').value},${document.getElementById('subject').value},${document.getElementById('paper').value},${document.getElementById('score').value}%,${document.getElementById('grade').value}\n`;
+
+            btn.disabled = true;
+            btn.innerText = "Syncing...";
+
+            try {
+                // 1. Get the current file content to get the "sha" (GitHub requirement)
+                const getFile = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                    headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+                });
+
+                let sha = "";
+                let oldContent = "";
+
+                if (getFile.ok) {
+                    const fileData = await getFile.json();
+                    sha = fileData.sha;
+                    oldContent = atob(fileData.content); // Decode from Base64
+                }
+
+                const updatedContent = oldContent + newEntry;
+
+                // 2. Push the updated content back to GitHub
+                const updateFile = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: "Add new grade entry",
+                        content: btoa(updatedContent), // Encode to Base64
+                        sha: sha
+                    })
+                });
+
+                if (updateFile.ok) {
+                    status.innerText = "✅ Logged successfully!";
+                    status.className = "text-center text-emerald-400 mt-2";
+                }
+            } catch (err) {
+                status.innerText = "❌ Error saving.";
+                status.className = "text-center text-red-400 mt-2";
+            }
+            btn.disabled = false;
+            btn.innerText = "Save to GitHub";
+        }
+    </script>
+</body>
+</html>
